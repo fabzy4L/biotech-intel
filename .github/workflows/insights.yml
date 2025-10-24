@@ -1,38 +1,20 @@
-name: biotech-insights
-on:
-  schedule:
-    - cron: "30 7 * * *"   # daily after pipeline
-  workflow_dispatch: {}
-permissions:
-  contents: write
-  issues: write
-jobs:
-  run:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Build insights
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # optional
-        run: python src/run_insights.py
-      - name: Commit summaries
+      - name: Build HTML report
+        run: python src/build_report.py
+
+      - name: Install wkhtmltopdf
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+
+      - name: Make PDF
+        run: wkhtmltopdf docs/daily_brief.html docs/daily_brief.pdf
+
+      - name: Commit report
         uses: EndBug/add-and-commit@v9
         with:
           author_name: github-actions[bot]
           author_email: 41898282+github-actions[bot]@users.noreply.github.com
-          message: "insights: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          message: "report: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           add: |
-            docs/summary.md
-            docs/summary_llm.md
-      - name: Post as Issue (optional)
-        if: ${{ github.repository_visibility == 'private' }}
-        uses: peter-evans/create-issue-from-file@v5
-        with:
-          title: "Daily Biotech Brief"
-          content-filepath: docs/summary.md
-          labels: brief
+            docs/daily_brief.html
+            docs/daily_brief.pdf
