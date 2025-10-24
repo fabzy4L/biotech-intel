@@ -1,0 +1,27 @@
+name: biotech-intel-pipeline
+on:
+  schedule:
+    - cron: "15 6 * * *"   # 06:15 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run pipeline
+        run: python -m src.main
+      - name: Commit results
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: github-actions[bot]
+          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+          message: "update: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          add: |
+            output/*.csv
+            docs/*.csv
