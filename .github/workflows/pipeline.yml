@@ -1,7 +1,8 @@
 name: biotech-intel-pipeline
 on:
-  schedule:
-    - cron: "15 6 * * *"   # 06:15 UTC daily
+  # Cron disabled — project is dormant. Trigger manually via workflow_dispatch to demo.
+  # schedule:
+  #   - cron: "15 6 * * *"   # 06:15 UTC daily
   workflow_dispatch: {}
 
 jobs:
@@ -14,7 +15,11 @@ jobs:
           python-version: "3.11"
       - name: Install deps
         run: pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest tests/ -v
       - name: Run pipeline
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
         run: python -m src.main
       - name: Commit results
         uses: EndBug/add-and-commit@v9

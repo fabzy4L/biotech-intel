@@ -26,3 +26,13 @@ def read_lines(path):
 
 def backoff(attempt):
     time.sleep(min(60, 2 ** attempt))
+
+def save_csv_dedup(df: pd.DataFrame, name: str, id_col: str):
+    p = OUT / f"{name}.csv"
+    if p.exists():
+        existing = pd.read_csv(p)
+        df = pd.concat([existing, df]).drop_duplicates(subset=[id_col]).reset_index(drop=True)
+    df = df.sort_values(by=[c for c in df.columns if "date" in c.lower()] or df.columns.tolist())
+    df.to_csv(p, index=False)
+    df.to_csv(DOCS / f"{name}.csv", index=False)
+    return p

@@ -14,16 +14,18 @@ def load_csvs():
 
 SYSTEM = "Summarize biotech events for an operator-investor. Output: sections: Approvals, Trials, Filings, Papers, Preprints, Watchlist Risks, Action Items. Be concise and specific."
 
-def call_openai(prompt: str) -> str:
-    from openai import OpenAI
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role":"system","content":SYSTEM},{"role":"user","content":prompt}],
-        temperature=0.2,
-        max_tokens=800
+def call_gemini(prompt: str) -> str:
+    import google.generativeai as genai
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        system_instruction=SYSTEM,
     )
-    return resp.choices[0].message.content
+    resp = model.generate_content(
+        prompt,
+        generation_config={"temperature": 0.2, "max_output_tokens": 800},
+    )
+    return resp.text
 
 def run_llm_summary():
     data = load_csvs()
@@ -33,7 +35,7 @@ def run_llm_summary():
         "samples": {k: v[:30] for k,v in data.items()}  # cap tokens
     }
     prompt = "Summarize the following JSON:\n" + json.dumps(payload, ensure_ascii=False)
-    md = call_openai(prompt)
+    md = call_gemini(prompt)
     (DOCS / "summary_llm.md").write_text(md, encoding="utf-8")
 
 if __name__ == "__main__":
